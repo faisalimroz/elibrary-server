@@ -43,6 +43,8 @@ async function run() {
       const userCollection = client.db('library').collection('user');
       const fictionCollection = client.db('library').collection('fiction');
       const bestfictionCollection = client.db('library').collection('bestsellerfiction');
+      const kidsCollection = client.db('library').collection('kids');
+      const bestkidsCollection = client.db('library').collection('bestsellerkids');
       // Connect the client to the server	(optional starting in v4.7)
       app.post('/payments',async(req,res)=>{
         const payment=req.body;
@@ -77,7 +79,32 @@ async function run() {
       }
     });
     
-      
+    app.get('/order/:email/:bfid', async (req, res) => {
+      try {
+          const userEmail = req.params.email;
+          const id = req.params.bfid;
+          console.log(userEmail,id,'dfdvlcnvcvlc')
+          const query = { user: userEmail, id: id };
+          const transaction = await paymentCollection.findOne(query);
+  
+          if (transaction) {
+              // Include the payment status in the response
+              const response = {
+                  ...transaction,
+                  paymentStatus: transaction.status,
+              };
+  
+              res.json(response);
+              console.log(response);
+          } else {
+              res.status(404).json({ error: 'User not found or no transaction found' });
+          }
+      } catch (error) {
+          console.error('Error fetching user history', error);
+          res.status(500).json({ error: 'Internal server error' });
+      }
+  });
+  
       app.get('/fiction', async (req, res) => {
         const query = {}
         const blogs = await fictionCollection.find(query).toArray();
@@ -87,6 +114,18 @@ async function run() {
       app.get('/bestfiction', async (req, res) => {
         const query = {}
         const blogs = await bestfictionCollection.find(query).toArray();
+        console.log(blogs)
+        res.send(blogs);
+      })
+      app.get('/kids', async (req, res) => {
+        const query = {}
+        const blogs = await kidsCollection.find(query).toArray();
+        console.log(blogs)
+        res.send(blogs);
+      })
+      app.get('/bestkids', async (req, res) => {
+        const query = {}
+        const blogs = await bestkidsCollection.find(query).toArray();
         console.log(blogs)
         res.send(blogs);
       })
@@ -232,9 +271,10 @@ app.get('/',(req,res)=>{
 })
 
 app.post('/create-payment-intent',verifyJWT,async(req,res)=>{
-  const {totalPrice,name}=req.body;
+  const {totalPrice,name, fid}=req.body;
   const amount= totalPrice*100;
-  const email=name
+  const email=name;
+
   console.log(totalPrice,name)
   const paymentIntent= await stripe.paymentIntents.create({
     amount: amount,
