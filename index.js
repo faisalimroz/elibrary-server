@@ -40,11 +40,18 @@ async function run() {
     try {
       const paymentCollection = client.db('library').collection('payments');
       const reviewCollection = client.db('library').collection('reviews');
+      const bookCollection = client.db('library').collection('allbook');
       const userCollection = client.db('library').collection('user');
       const fictionCollection = client.db('library').collection('fiction');
+      const nonfictionCollection = client.db('library').collection('nonfiction');
+      const biographyCollection = client.db('library').collection('biography');
+      const bestbiographyCollection = client.db('library').collection('bestsellerbiography');
       const bestfictionCollection = client.db('library').collection('bestsellerfiction');
+      const bestnonfictionCollection = client.db('library').collection('bestnonfiction');
       const kidsCollection = client.db('library').collection('kids');
       const bestkidsCollection = client.db('library').collection('bestsellerkids');
+      const novelCollection = client.db('library').collection('novel');
+      const bestnovelCollection = client.db('library').collection('bestnovel');
       // Connect the client to the server	(optional starting in v4.7)
       app.post('/payments',async(req,res)=>{
         const payment=req.body;
@@ -61,15 +68,19 @@ async function run() {
         }
         next()
      }
+    
      app.get('/orders/:email', async (req, res) => {
       try {
           const userEmail = req.params.email;
           const query = { user: userEmail };
-          const transactions = await paymentCollection.find(query);
-    
-          if (transactions) {
+          console.log('user mail', query)
+  
+          // Use toArray to convert the cursor to an array
+          const transactions = await paymentCollection.find(query).toArray();
+  
+          if (transactions.length > 0) {
               res.json(transactions);
-              console.log(transactions)
+              console.log(transactions);
           } else {
               res.status(404).json({ error: 'User not found' });
           }
@@ -77,7 +88,44 @@ async function run() {
           console.error('Error fetching user history', error);
           res.status(500).json({ error: 'Internal server error' });
       }
-    });
+  });
+  app.get('/search',async (req, res) => {
+    const { query } = req.query;
+    console.log(query)
+  
+    if (!query) {
+      return res.status(400).json({ error: 'Invalid search query' });
+    }
+  
+    // Perform a simple case-insensitive search on book titles
+    const searchResults = await bookCollection.find({ name: { $regex: new RegExp(query, 'i') } }).toArray();
+    console.log(searchResults)
+  
+    res.json(searchResults);
+  });
+  
+  app.get('/allorder', async (req, res) => {
+    try {
+        
+        const query = {};
+        console.log('user mail', query)
+
+        // Use toArray to convert the cursor to an array
+        const transactions = await paymentCollection.find(query).toArray();
+
+        if (transactions.length > 0) {
+            res.json(transactions);
+            console.log(transactions);
+        } else {
+            res.status(404).json({ error: 'User not found' });
+        }
+    } catch (error) {
+        console.error('Error fetching user history', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+  
     
     app.get('/order/:email/:bfid', async (req, res) => {
       try {
@@ -111,9 +159,21 @@ async function run() {
         console.log(blogs)
         res.send(blogs);
       })
+      app.get('/nonfiction', async (req, res) => {
+        const query = {}
+        const blogs = await nonfictionCollection.find(query).toArray();
+        console.log(blogs)
+        res.send(blogs);
+      })
       app.get('/bestfiction', async (req, res) => {
         const query = {}
         const blogs = await bestfictionCollection.find(query).toArray();
+        console.log(blogs)
+        res.send(blogs);
+      })
+      app.get('/bestnonfiction', async (req, res) => {
+        const query = {}
+        const blogs = await bestnonfictionCollection.find(query).toArray();
         console.log(blogs)
         res.send(blogs);
       })
@@ -123,9 +183,33 @@ async function run() {
         console.log(blogs)
         res.send(blogs);
       })
+      app.get('/biography', async (req, res) => {
+        const query = {}
+        const blogs = await biographyCollection.find(query).toArray();
+        console.log(blogs)
+        res.send(blogs);
+      })
+      app.get('/novel', async (req, res) => {
+        const query = {}
+        const blogs = await novelCollection.find(query).toArray();
+        console.log(blogs)
+        res.send(blogs);
+      })
+      app.get('/bestnovel', async (req, res) => {
+        const query = {}
+        const blogs = await bestnovelCollection.find(query).toArray();
+        console.log(blogs)
+        res.send(blogs);
+      })
       app.get('/bestkids', async (req, res) => {
         const query = {}
         const blogs = await bestkidsCollection.find(query).toArray();
+        console.log(blogs)
+        res.send(blogs);
+      })
+      app.get('/bestbiography', async (req, res) => {
+        const query = {}
+        const blogs = await bestbiographyCollection.find(query).toArray();
         console.log(blogs)
         res.send(blogs);
       })
@@ -228,6 +312,78 @@ async function run() {
           res.status(500).json({ error: 'Internal Server Error' });
         }
       });
+      app.get('/nonfiction/:nid', async (req, res) => {
+        const id = req.params.nid;
+        console.log(id); // Check the value of id
+  
+        try {
+          const nonfiction= await nonfictionCollection.findOne({ _id: ObjectId.isValid(id) ? new ObjectId(id) : id });
+  
+          if (!nonfiction) {
+            return res.status(404).json({ error: 'fictionnot found' });
+          }
+  
+          console.log(nonfiction);
+          res.json(nonfiction);
+        } catch (error) {
+          console.error('Error fetching nonfiction:', error);
+          res.status(500).json({ error: 'Internal Server Error' });
+        }
+      });
+      app.get('/novel/:nlid', async (req, res) => {
+        const id = req.params.nlid;
+        console.log(id); // Check the value of id
+  
+        try {
+          const novel= await novelCollection.findOne({ _id: ObjectId.isValid(id) ? new ObjectId(id) : id });
+  
+          if (!novel) {
+            return res.status(404).json({ error: 'novel found' });
+          }
+  
+          console.log(novel);
+          res.json(novel);
+        } catch (error) {
+          console.error('Error fetching novel:', error);
+          res.status(500).json({ error: 'Internal Server Error' });
+        }
+      });
+      app.get('/biography/:bid', async (req, res) => {
+        const id = req.params.bid;
+        console.log(id); // Check the value of id
+  
+        try {
+          const biography= await biographyCollection.findOne({ _id: ObjectId.isValid(id) ? new ObjectId(id) : id });
+  
+          if (!biography) {
+            return res.status(404).json({ error: 'biographyfound' });
+          }
+  
+          console.log(biography);
+          res.json(biography);
+        } catch (error) {
+          console.error('Error fetching biography:', error);
+          res.status(500).json({ error: 'Internal Server Error' });
+        }
+      });
+      app.get('/kids/:kid', async (req, res) => {
+        const id = req.params.kid;
+        console.log(id); // Check the value of id
+  
+        try {
+          const kids= await kidsCollection.findOne({ _id: ObjectId.isValid(id) ? new ObjectId(id) : id });
+  
+          if (!kids) {
+            return res.status(404).json({ error: 'fkids found' });
+          }
+  
+          console.log(kids);
+          res.json(kids);
+        } catch (error) {
+          console.error('Error fetching kids:', error);
+          res.status(500).json({ error: 'Internal Server Error' });
+        }
+      });
       app.get('/bestfiction/:bfid', async (req, res) => {
         const id = req.params.bfid;
         console.log(id); // Check the value of id
@@ -246,6 +402,99 @@ async function run() {
           res.status(500).json({ error: 'Internal Server Error' });
         }
       });
+      app.get('/bestnonfiction/:nfid', async (req, res) => {
+        const id = req.params.nfid;
+        console.log(id); // Check the value of id
+  
+        try {
+          const nonfiction= await bestnonfictionCollection.findOne({ _id: ObjectId.isValid(id) ? new ObjectId(id) : id });
+  
+          if (!nonfiction) {
+            return res.status(404).json({ error: 'nonnnfictionnot found' });
+          }
+  
+          console.log(nonfiction);
+          res.json(nonfiction);
+        } catch (error) {
+          console.error('Error fetching nonfiction:', error);
+          res.status(500).json({ error: 'Internal Server Error' });
+        }
+      });
+      app.get('/bestbiography/:bbid', async (req, res) => {
+        const id = req.params.bbid;
+        console.log(id); // Check the value of id
+  
+        try {
+          const biography= await bestbiographyCollection.findOne({ _id: ObjectId.isValid(id) ? new ObjectId(id) : id });
+  
+          if (!biography) {
+            return res.status(404).json({ error: 'fictionnot found' });
+          }
+  
+          console.log(biography);
+          res.json(biography);
+        } catch (error) {
+          console.error('Error fetching biography:', error);
+          res.status(500).json({ error: 'Internal Server Error' });
+        }
+      });
+      app.get('/bestkids/:bkid', async (req, res) => {
+        const id = req.params.bkid;
+        console.log(id,'hey'); // Check the value of id
+  
+        try {
+          const kids= await bestkidsCollection.findOne({ _id: ObjectId.isValid(id) ? new ObjectId(id) : id });
+            console.log('kidsss',kids)
+          if (!kids) {
+            return res.status(404).json({ error: 'fictionnot found' });
+          }
+  
+          console.log(kids);
+          res.json(kids);
+        } catch (error) {
+          console.error('Error fetching kids:', error);
+          res.status(500).json({ error: 'Internal Server Error' });
+        }
+      });
+      app.get('/bestnovel/:bnlbid', async (req, res) => {
+        const id = req.params.bnlbid;
+        console.log(id,'hey'); // Check the value of id
+  
+        try {
+          const novel= await bestnovelCollection.findOne({ _id: ObjectId.isValid(id) ? new ObjectId(id) : id });
+            console.log('kidsss',novel)
+          if (!novel) {
+            return res.status(404).json({ error: 'novel found' });
+          }
+  
+          console.log(novel);
+          res.json(novel);
+        } catch (error) {
+          console.error('Error fetching novel:', error);
+          res.status(500).json({ error: 'Internal Server Error' });
+        }
+      });
+      app.get('/admin-stats', async (req, res) => {
+        try {
+            const fictionCount = await fictionCollection.estimatedDocumentCount();
+            const nonfictionCount = await nonfictionCollection.estimatedDocumentCount();
+            const kidsCount = await kidsCollection.estimatedDocumentCount();
+            const novelCount = await novelCollection.estimatedDocumentCount();
+            const biographyCount = await biographyCollection.estimatedDocumentCount();
+    
+            res.send({
+                fictionCollection: fictionCount,
+                nonfictionCollection: nonfictionCount,
+                novelCollection: novelCount,
+                kidsCollection: kidsCount,
+                biographyCollection: biographyCount
+            });
+        } catch (error) {
+            console.error('Error fetching collection counts', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    });
+    
      
 
     } finally {
